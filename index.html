@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Día de las Flores Moradas</title>
+  
+  <!-- Google Fonts: Serif elegante y sans-serif moderna -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================
+       VARIABLES Y ESTILOS BASE
+       ========================================== */
+    :root {
+      --bg-dark: #0f0a1c;
+      --bg-card: rgba(30, 20, 50, 0.45);
+      --border-card: rgba(186, 140, 255, 0.15);
+      --purple-light: #e2c0ff;
+      --purple-main: #b873ff;
+      --purple-deep: #8a3ffc;
+      --gold-accent: #f3e5ab;
+      --text-muted: #c5b8db;
+      --font-serif: 'Cormorant Garamond', Georgia, serif;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden;
+      background-color: var(--bg-dark);
+      color: #ffffff;
+      font-family: var(--font-sans);
+      background-image: 
+        radial-gradient(circle at 50% 20%, rgba(138, 63, 252, 0.15) 0%, transparent 60%),
+        radial-gradient(circle at 80% 80%, rgba(184, 115, 255, 0.08) 0%, transparent 50%);
+    }
+
+    /* ==========================================
+       CANVAS Y CAPAS DE FONDO
+       ========================================== */
+    #canvas-petals {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    #canvas-garden {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 240px;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* ==========================================
+       ESTRUCTURA DE LA PÁGINA
+       ========================================== */
+    .wrapper {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2rem 1.5rem 8rem 1.5rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* BARRA SUPERIOR CON MÚSICA */
+    .top-bar {
+      width: 100%;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      padding-bottom: 2rem;
+    }
+
+    .btn-music {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-card);
+      color: var(--purple-light);
+      padding: 0.55rem 1.2rem;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      font-family: var(--font-sans);
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-music:hover {
+      background: rgba(184, 115, 255, 0.15);
+      border-color: rgba(184, 115, 255, 0.4);
+      transform: translateY(-2px);
+    }
+
+    .btn-music.active {
+      background: rgba(184, 115, 255, 0.25);
+      border-color: var(--purple-main);
+      box-shadow: 0 0 15px rgba(184, 115, 255, 0.3);
+    }
+
+    /* CABECERA PRINCIPAL */
+    header {
+      text-align: center;
+      margin-bottom: 3.5rem;
+      animation: fadeIn 1.2s ease-out;
+    }
+
+    .subtitle-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: var(--gold-accent);
+      margin-bottom: 1rem;
+      opacity: 0.9;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(2.5rem, 6vw, 4.2rem);
+      font-weight: 300;
+      line-height: 1.15;
+      background: linear-gradient(135deg, #ffffff 0%, var(--purple-light) 60%, var(--purple-main) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1.2rem;
+      letter-spacing: -0.5px;
+    }
+
+    .hero-desc {
+      font-size: clamp(0.95rem, 2vw, 1.1rem);
+      color: var(--text-muted);
+      font-weight: 300;
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* SECCIÓN DE TARJETAS FLIP 3D */
+    .cards-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.8rem;
+      width: 100%;
+      margin-bottom: 3rem;
+    }
+
+    .card-flip {
+      background-color: transparent;
+      height: 240px;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+
+    .card-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      text-align: center;
+      transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      transform-style: preserve-3d;
+    }
+
+    .card-flip:hover .card-inner,
+    .card-flip.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .card-front, .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      border-radius: 20px;
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .card-front {
+      transition: border-color 0.3s ease;
+    }
+
+    .card-flip:hover .card-front {
+      border-color: rgba(184, 115, 255, 0.4);
+    }
+
+    .card-number {
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      color: var(--gold-accent);
+      margin-bottom: 0.5rem;
+      font-style: italic;
+    }
+
+    .card-front h3 {
+      font-family: var(--font-serif);
+      font-size: 1.8rem;
+      font-weight: 400;
+      color: #ffffff;
+      margin-bottom: 0.8rem;
+    }
+
+    .card-hint {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      opacity: 0.7;
+    }
+
+    .card-back {
+      transform: rotateY(180deg);
+      background: rgba(40, 25, 65, 0.75);
+      border-color: rgba(184, 115, 255, 0.3);
+    }
+
+    .card-back p {
+      font-family: var(--font-serif);
+      font-size: 1.25rem;
+      line-height: 1.5;
+      color: var(--purple-light);
+      font-weight: 300;
+    }
+
+    /* PIE DE PÁGINA NEUTRO */
+    footer {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .footer-text {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      letter-spacing: 1.5px;
+      font-weight: 300;
+      opacity: 0.8;
+    }
+
+    /* ANIMACIONES */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* AJUSTES RESPONSIVOS */
+    @media (max-width: 600px) {
+      .wrapper {
+        padding-bottom: 7rem;
+      }
+      .cards-container {
+        grid-template-columns: 1fr;
+      }
+      .card-flip {
+        height: 200px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Audio MP3 del usuario -->
+  <audio id="audioFondo" loop preload="auto">
+    <source src="Monsieur Periné - Nuestra Canción (Letra) con flores te llevaste mi tristeza, con colores 🌸.mp3" type="audio/mp3">
+  </audio>
+
+  <!-- Canvas para animación de pétalos de fondo y flores interactivas -->
+  <canvas id="canvas-petals"></canvas>
+  <canvas id="canvas-garden"></canvas>
+
+  <div class="wrapper">
+    <!-- BARRA SUPERIOR (CONTROL MÚSICA) -->
+    <div class="top-bar">
+      <button class="btn-music" id="btnMusica" onclick="toggleMusica()">
+        <span id="musicIcon">🎵</span> <span id="musicText">Música: Off</span>
+      </button>
+    </div>
+
+    <!-- SECCIÓN DE CABECERA -->
+    <header>
+      <span class="subtitle-badge">Una Dedicatoria Especial</span>
+      <h1>Feliz Día de las Flores Moradas</h1>
+      <p class="hero-desc">
+        Hay detalles silenciosos que llenan de luz los días. Que estas flores sigan floreciendo con gracia y serenidad.
+      </p>
+    </header>
+
+    <!-- TARJETAS CON MENSAJES EDITABLES -->
+    <main class="cards-container">
+      <div class="card-flip" onclick="this.classList.toggle('flipped')">
+        <div class="card-inner">
+          <div class="card-front">
+            
+            
+            <span class="card-hint">Toca para descubrir</span>
+          </div>
+          <div class="card-back">
+            <p>“ Gracias por la serenidad que contagias y por hacer que los días ordinarios se vuelvan inolvidables. Tu presencia siempre ilumina.”</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-flip" onclick="this.classList.toggle('flipped')">
+        <div class="card-inner">
+          <div class="card-front">
+           
+            
+            <span class="card-hint">Toca para descubrir</span>
+          </div>
+          <div class="card-back">
+            <p>“Que estas flores moradas recuerden lo valioso de tu esencia: única, cálida y capaz de transformar todo a su alrededor.”</p>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- FOOTER NEUTRO -->
+    <footer>
+      <p class="footer-text">Con cariño y aprecio 💜 Feliz Día de las Flores Moradas</p>
+    </footer>
+  </div>
+
+  <script>
+    /* ==========================================
+       1. CONTROL DE AUDIO MP3
+       ========================================== */
+    const audio = document.getElementById('audioFondo');
+    const btnMusica = document.getElementById('btnMusica');
+    const musicText = document.getElementById('musicText');
+
+    function toggleMusica() {
+      if (audio.paused) {
+        audio.play().then(() => {
+          btnMusica.classList.add('active');
+          musicText.textContent = "Música: On";
+        }).catch(err => {
+          console.log("Error al reproducir audio:", err);
+          alert("Asegúrate de colocar el archivo 'musica.mp3' en la misma carpeta que este HTML.");
+        });
+      } else {
+        audio.pause();
+        btnMusica.classList.remove('active');
+        musicText.textContent = "Música: Off";
+      }
+    }
+
+    /* ==========================================
+       2. CANVAS: PÉTALOS FLOTANTES & FLORES INTERACTIVAS
+       ========================================== */
+    const canvasPetals = document.getElementById('canvas-petals');
+    const ctxPetals = canvasPetals.getContext('2d');
+
+    let width = canvasPetals.width = window.innerWidth;
+    let height = canvasPetals.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      width = canvasPetals.width = window.innerWidth;
+      height = canvasPetals.height = window.innerHeight;
+      initGarden();
+    });
+
+    // Clase para los pétalos cayendo
+    class Petal {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        this.x = Math.random() * width;
+        this.y = -20;
+        this.size = Math.random() * 8 + 6;
+        this.speedY = Math.random() * 1.2 + 0.6;
+        this.speedX = Math.random() * 0.8 - 0.4;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotSpeed = (Math.random() - 0.5) * 0.02;
+        this.opacity = Math.random() * 0.5 + 0.3;
+        this.color = `hsl(${Math.random() * 40 + 260}, 70%, 75%)`;
+      }
+
+      update() {
+        this.y += this.speedY;
+        this.x += Math.sin(this.y * 0.01) * 0.5 + this.speedX;
+        this.rotation += this.rotSpeed;
+
+        if (this.y > height + 20) {
+          this.reset();
+        }
+      }
+
+      draw() {
+        ctxPetals.save();
+        ctxPetals.translate(this.x, this.y);
+        ctxPetals.rotate(this.rotation);
+        ctxPetals.globalAlpha = this.opacity;
+        ctxPetals.fillStyle = this.color;
+
+        ctxPetals.beginPath();
+        ctxPetals.moveTo(0, 0);
+        ctxPetals.bezierCurveTo(-this.size / 2, -this.size / 2, -this.size, this.size / 3, 0, this.size);
+        ctxPetals.bezierCurveTo(this.size, this.size / 3, this.size / 2, -this.size / 2, 0, 0);
+        ctxPetals.fill();
+
+        ctxPetals.restore();
+      }
+    }
+
+    // Clase para flores que brotan al tocar la pantalla
+    class SpawnedFlower {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.maxSize = Math.random() * 14 + 12;
+        this.size = 0;
+        this.growthRate = Math.random() * 0.6 + 0.4;
+        this.life = 1;
+        this.decay = 0.008;
+        this.petalCount = Math.floor(Math.random() * 2) + 5;
+        this.hue = Math.random() * 40 + 260;
+      }
+
+      update() {
+        if (this.size < this.maxSize) {
+          this.size += this.growthRate;
+        } else {
+          this.life -= this.decay;
+        }
+      }
+
+      draw() {
+        if (this.life <= 0) return;
+
+        ctxPetals.save();
+        ctxPetals.translate(this.x, this.y);
+        ctxPetals.globalAlpha = this.life * 0.85;
+
+        // Pétalos
+        for (let i = 0; i < this.petalCount; i++) {
+          const angle = (i * Math.PI * 2) / this.petalCount;
+          ctxPetals.save();
+          ctxPetals.rotate(angle);
+          
+          ctxPetals.fillStyle = `hsl(${this.hue}, 65%, 65%)`;
+          ctxPetals.beginPath();
+          ctxPetals.ellipse(0, this.size / 1.8, this.size / 3, this.size / 1.6, 0, 0, Math.PI * 2);
+          ctxPetals.fill();
+          ctxPetals.restore();
+        }
+
+        // Centro de la flor
+        ctxPetals.fillStyle = '#f3e5ab';
+        ctxPetals.beginPath();
+        ctxPetals.arc(0, 0, this.size / 3.5, 0, Math.PI * 2);
+        ctxPetals.fill();
+
+        ctxPetals.restore();
+      }
+    }
+
+    const petals = Array.from({ length: 35 }, () => new Petal());
+    const spawnedFlowers = [];
+
+    // Detectar toque o clic para brotar flores
+    window.addEventListener('click', (e) => {
+      // Evitar crear flores si se hace clic en botones o tarjetas
+      if (e.target.closest('.btn-music') || e.target.closest('.card-flip')) return;
+      spawnedFlowers.push(new SpawnedFlower(e.clientX, e.clientY));
+    });
+
+    /* ==========================================
+       3. CANVAS: JARDÍN BOTÁNICO INFERIOR
+       ========================================== */
+    const canvasGarden = document.getElementById('canvas-garden');
+    const ctxGarden = canvasGarden.getContext('2d');
+    let gardenFlowers = [];
+
+    class Plant {
+      constructor(x, type, depthLayer) {
+        this.x = x;
+        this.type = type; // 0: Tulipán, 1: Lavanda, 2: Violeta, 3: Orquídea
+        this.depthLayer = depthLayer; // 0: Fondo, 1: Medio, 2: Frente
+        
+        // Escala según la capa de profundidad
+        this.scale = 0.6 + depthLayer * 0.25 + Math.random() * 0.15;
+        this.height = (110 + Math.random() * 50) * this.scale;
+        this.angleOffset = Math.random() * Math.PI * 2;
+        this.swaySpeed = 0.015 + Math.random() * 0.01;
+        this.hue = 265 + Math.random() * 30; // Tonos morados/lavanda
+      }
+
+      draw(time) {
+        const sway = Math.sin(time * this.swaySpeed + this.angleOffset) * (8 * this.scale);
+        const startY = canvasGarden.height;
+        const endX = this.x + sway;
+        const endY = startY - this.height;
+
+        ctxGarden.save();
+
+        // Opacidad según capa de profundidad
+        ctxGarden.globalAlpha = 0.7 + this.depthLayer * 0.15;
+
+        // Dibujar Tallo
+        ctxGarden.strokeStyle = `hsl(110, 25%, ${20 + this.depthLayer * 10}%)`;
+        ctxGarden.lineWidth = 3 * this.scale;
+        ctxGarden.beginPath();
+        ctxGarden.moveTo(this.x, startY);
+        ctxGarden.quadraticCurveTo(this.x, startY - this.height * 0.5, endX, endY);
+        ctxGarden.stroke();
+
+        // Dibujar Flor según Tipo
+        ctxGarden.translate(endX, endY);
+
+        if (this.type === 0) {
+          // Tulipán Morado
+          ctxGarden.fillStyle = `hsl(${this.hue}, 65%, ${50 + this.depthLayer * 5}%)`;
+          ctxGarden.beginPath();
+          ctxGarden.arc(0, 0, 14 * this.scale, 0, Math.PI);
+          ctxGarden.lineTo(-12 * this.scale, -18 * this.scale);
+          ctxGarden.lineTo(-4 * this.scale, -10 * this.scale);
+          ctxGarden.lineTo(0, -20 * this.scale);
+          ctxGarden.lineTo(4 * this.scale, -10 * this.scale);
+          ctxGarden.lineTo(12 * this.scale, -18 * this.scale);
+          ctxGarden.closePath();
+          ctxGarden.fill();
+        } else if (this.type === 1) {
+          // Lavanda Agrupada
+          ctxGarden.fillStyle = `hsl(${this.hue}, 60%, ${60 + this.depthLayer * 5}%)`;
+          for (let i = 0; i < 7; i++) {
+            const yOffset = i * (6 * this.scale);
+            const r = (7 - i * 0.6) * this.scale;
+            ctxGarden.beginPath();
+            ctxGarden.arc(0, yOffset - (20 * this.scale), Math.max(r, 2), 0, Math.PI * 2);
+            ctxGarden.fill();
+          }
+        } else if (this.type === 2) {
+          // Violeta Clásica
+          ctxGarden.fillStyle = `hsl(${this.hue}, 70%, ${55 + this.depthLayer * 5}%)`;
+          for (let i = 0; i < 5; i++) {
+            ctxGarden.rotate((Math.PI * 2) / 5);
+            ctxGarden.beginPath();
+            ctxGarden.ellipse(0, 9 * this.scale, 6 * this.scale, 9 * this.scale, 0, 0, Math.PI * 2);
+            ctxGarden.fill();
+          }
+          // Centro amarillo
+          ctxGarden.fillStyle = '#f3e5ab';
+          ctxGarden.beginPath();
+          ctxGarden.arc(0, 0, 3 * this.scale, 0, Math.PI * 2);
+          ctxGarden.fill();
+        } else {
+          // Orquídea Delicada
+          ctxGarden.fillStyle = `hsl(${this.hue}, 75%, 65%)`;
+          for (let i = 0; i < 3; i++) {
+            ctxGarden.rotate((Math.PI * 2) / 3);
+            ctxGarden.beginPath();
+            ctxGarden.ellipse(0, 11 * this.scale, 7 * this.scale, 14 * this.scale, 0, 0, Math.PI * 2);
+            ctxGarden.fill();
+          }
+          ctxGarden.fillStyle = '#e2c0ff';
+          ctxGarden.beginPath();
+          ctxGarden.arc(0, 0, 5 * this.scale, 0, Math.PI * 2);
+          ctxGarden.fill();
+        }
+
+        ctxGarden.restore();
+      }
+    }
+
+    function initGarden() {
+      canvasGarden.width = window.innerWidth;
+      canvasGarden.height = 240;
+      gardenFlowers = [];
+
+      const totalPlants = Math.floor(window.innerWidth / 18);
+      
+      for (let i = 0; i < totalPlants; i++) {
+        const x = (i / totalPlants) * window.innerWidth + (Math.random() * 20 - 10);
+        const type = Math.floor(Math.random() * 4);
+        const depthLayer = Math.floor(Math.random() * 3); // 0, 1, 2
+        gardenFlowers.push(new Plant(x, type, depthLayer));
+      }
+
+      // Ordenar por capa de profundidad para renderizar en orden correcto
+      gardenFlowers.sort((a, b) => a.depthLayer - b.depthLayer);
+    }
+
+    /* ==========================================
+       4. BUCLE DE ANIMACIÓN PRINCIPAL
+       ========================================== */
+    let time = 0;
+    function animate() {
+      time++;
+      
+      // Limpiar Canvas de Pétalos
+      ctxPetals.clearRect(0, 0, width, height);
+
+      // Actualizar y dibujar pétalos cayendo
+      petals.forEach(petal => {
+        petal.update();
+        petal.draw();
+      });
+
+      // Actualizar y dibujar flores interactivas
+      for (let i = spawnedFlowers.length - 1; i >= 0; i--) {
+        const flower = spawnedFlowers[i];
+        flower.update();
+        flower.draw();
+        if (flower.life <= 0) {
+          spawnedFlowers.splice(i, 1);
+        }
+      }
+
+      // Limpiar y dibujar Jardín Inferior
+      ctxGarden.clearRect(0, 0, canvasGarden.width, canvasGarden.height);
+      gardenFlowers.forEach(plant => plant.draw(time));
+
+      requestAnimationFrame(animate);
+    }
+
+    // Inicializar
+    initGarden();
+    animate();
+  </script>
+</body>
+</html>
